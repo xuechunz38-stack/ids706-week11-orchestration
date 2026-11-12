@@ -1,0 +1,9 @@
+{
+  "model": "logistic_regression (log GDP, scaled numerics, one-hot region/income)",
+  "split": "GroupShuffleSplit by country, 25% countries held out",
+  "n_train": 3831,
+  "n_test": 1287,
+  "accuracy": 0.8897,
+  "f1": 0.8408,
+  "roc_auc": 0.9552
+}

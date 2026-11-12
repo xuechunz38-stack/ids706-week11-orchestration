@@ -1,0 +1,747 @@
+{
+  "dataset_path": "/tmp/agent_loop/engineered_warehouse_snapshot.csv",
+  "target_column": "high_life_expectancy",
+  "cycles": 4,
+  "best_val_f1": 0.9431524547803618,
+  "best_spec": {
+    "experiment_id": "exp-4",
+    "model_family": "random_forest",
+    "hyperparameters": {
+      "n_estimators": 200,
+      "max_depth": 12
+    },
+    "drop_columns": [],
+    "rationale": "heuristic HPT from plan focus=capacity_or_regularization: random_forest"
+  },
+  "holdout_metrics": {
+    "f1": 0.9434954007884363,
+    "accuracy": 0.9580078125,
+    "n_holdout": 1024
+  },
+  "source": {
+    "type": "postgres",
+    "table": "analytics.country_year_features",
+    "rows": 5118,
+    "snapshot": "/tmp/agent_loop/warehouse_snapshot.csv"
+  },
+  "feature_report": {
+    "dropped_leakage": [
+      "life_expectancy"
+    ],
+    "dropped_identifiers": [
+      "iso3",
+      "country"
+    ],
+    "dropped_total": [
+      "life_expectancy",
+      "iso3",
+      "country"
+    ],
+    "log_transformed": [],
+    "n_features": 7,
+    "engineered_path": "/tmp/agent_loop/engineered_warehouse_snapshot.csv"
+  },
+  "error_analysis": {
+    "model_family": "random_forest",
+    "n_holdout": 1024,
+    "accuracy": 0.958,
+    "precision": 0.9276,
+    "recall": 0.9599,
+    "f1": 0.9435,
+    "confusion_matrix": {
+      "labels": [
+        0,
+        1
+      ],
+      "matrix": [
+        [
+          622,
+          28
+        ],
+        [
+          15,
+          359
+        ]
+      ]
+    },
+    "roc_auc": 0.9919,
+    "slice_column": "region",
+    "slices": [
+      {
+        "region": "Europe & Central Asia",
+        "n": 243,
+        "accuracy": 0.9177,
+        "f1": 0.9394,
+        "positive_rate": 0.6502
+      },
+      {
+        "region": "South Asia",
+        "n": 40,
+        "accuracy": 0.925,
+        "f1": 0.7692,
+        "positive_rate": 0.2
+      },
+      {
+        "region": "Latin America & Caribbean",
+        "n": 202,
+        "accuracy": 0.9406,
+        "f1": 0.9178,
+        "positive_rate": 0.3614
+      },
+      {
+        "region": "Middle East, North Africa, Afghanistan & Pakistan",
+        "n": 123,
+        "accuracy": 0.9593,
+        "f1": 0.9505,
+        "positive_rate": 0.4065
+      },
+      {
+        "region": "East Asia & Pacific",
+        "n": 171,
+        "accuracy": 0.9825,
+        "f1": 0.9778,
+        "positive_rate": 0.3918
+      },
+      {
+        "region": "North America",
+        "n": 17,
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "positive_rate": 1.0
+      },
+      {
+        "region": "Sub-Saharan Africa",
+        "n": 228,
+        "accuracy": 1.0,
+        "f1": 1.0,
+        "positive_rate": 0.0044
+      }
+    ]
+  },
+  "verdict": {
+    "action": "accept",
+    "observation": "val f1 0.943 meets target 0.90",
+    "next_action": "finalize"
+  },
+  "stop_reason": "finalize",
+  "profile": {
+    "n_rows": 5118,
+    "n_columns": 11,
+    "target": "high_life_expectancy",
+    "target_rate": 0.36518171160609614,
+    "numeric_features": [
+      "year",
+      "gdp_per_capita",
+      "electricity_access_pct",
+      "urban_population_pct",
+      "fertility_rate",
+      "life_expectancy"
+    ],
+    "categorical_features": [
+      "iso3",
+      "country",
+      "region",
+      "income_group"
+    ],
+    "leakage_suspects": [],
+    "recommended_drops": [],
+    "notes": [
+      "Heuristic profile (OpenRouter unavailable).",
+      "Drop id-like / high-cardinality text before modeling.",
+      "feature_engineer dropped ['life_expectancy', 'iso3', 'country'] and log-transformed []"
+    ]
+  },
+  "memory": {
+    "history": [
+      {
+        "cycle": 1,
+        "hypothesis": {
+          "direction": "Start with a simple linear baseline, drop leakage-prone columns, then iterate.",
+          "why": "Heuristic profile (OpenRouter unavailable).",
+          "focus": "baseline_then_iterate",
+          "respect_drops": [],
+          "avoid_repeats": []
+        },
+        "spec": {
+          "experiment_id": "exp-1",
+          "model_family": "logistic_regression",
+          "hyperparameters": {
+            "C": 0.25,
+            "max_iter": 300
+          },
+          "drop_columns": [],
+          "rationale": "heuristic HPT from plan focus=baseline_then_iterate: logistic_regression"
+        },
+        "model_family": "logistic_regression",
+        "f1": 0.8369304556354916,
+        "verdict": {
+          "action": "revise",
+          "observation": "val f1 0.837 below target 0.90",
+          "next_action": "propose next experiment"
+        }
+      },
+      {
+        "cycle": 2,
+        "hypothesis": {
+          "direction": "Increase model capacity or relax regularization; prior val F1 was under target.",
+          "why": "val f1 0.837 below target 0.90",
+          "focus": "capacity_or_regularization",
+          "respect_drops": [],
+          "avoid_repeats": [
+            "logistic_regression"
+          ]
+        },
+        "spec": {
+          "experiment_id": "exp-2",
+          "model_family": "logistic_regression",
+          "hyperparameters": {
+            "C": 0.5,
+            "max_iter": 300
+          },
+          "drop_columns": [],
+          "rationale": "heuristic HPT from plan focus=capacity_or_regularization: logistic_regression"
+        },
+        "model_family": "logistic_regression",
+        "f1": 0.8263473053892215,
+        "verdict": {
+          "action": "revise",
+          "observation": "val f1 0.826 below target 0.90",
+          "next_action": "propose next experiment"
+        }
+      },
+      {
+        "cycle": 3,
+        "hypothesis": {
+          "direction": "logistic_regression plateaued under target after 2 tries; switch to a different model family (e.g. tree ensemble for non-linear income effects).",
+          "why": "val f1 0.826 below target 0.90",
+          "focus": "model_family_switch",
+          "respect_drops": [],
+          "avoid_repeats": [
+            "logistic_regression"
+          ]
+        },
+        "spec": {
+          "experiment_id": "exp-3",
+          "model_family": "random_forest",
+          "hyperparameters": {
+            "n_estimators": 160,
+            "max_depth": 8
+          },
+          "drop_columns": [],
+          "rationale": "heuristic HPT from plan focus=model_family_switch: random_forest"
+        },
+        "model_family": "random_forest",
+        "f1": 0.8937728937728938,
+        "verdict": {
+          "action": "revise",
+          "observation": "val f1 0.894 below target 0.90",
+          "next_action": "propose next experiment"
+        }
+      }
+    ],
+    "findings": [],
+    "lessons": [
+      "val f1 0.837 below target 0.90",
+      "val f1 0.826 below target 0.90",
+      "val f1 0.894 below target 0.90"
+    ]
+  },
+  "model": "nvidia/nemotron-3.5-lightning:free",
+  "steps": [
+    {
+      "node": "warehouse_loader",
+      "note": "postgres analytics.country_year_features \u00b7 5118 rows",
+      "output": {
+        "type": "postgres",
+        "table": "analytics.country_year_features",
+        "rows": 5118,
+        "snapshot": "/tmp/agent_loop/warehouse_snapshot.csv"
+      }
+    },
+    {
+      "node": "data_scientist",
+      "note": "heuristic",
+      "used_llm": false,
+      "model": null,
+      "output": {
+        "n_rows": 5118,
+        "n_columns": 11,
+        "target": "high_life_expectancy",
+        "target_rate": 0.36518171160609614,
+        "numeric_features": [
+          "year",
+          "gdp_per_capita",
+          "electricity_access_pct",
+          "urban_population_pct",
+          "fertility_rate",
+          "life_expectancy"
+        ],
+        "categorical_features": [
+          "iso3",
+          "country",
+          "region",
+          "income_group"
+        ],
+        "leakage_suspects": [],
+        "recommended_drops": [],
+        "notes": [
+          "Heuristic profile (OpenRouter unavailable).",
+          "Drop id-like / high-cardinality text before modeling."
+        ]
+      }
+    },
+    {
+      "node": "feature_engineer",
+      "note": "dropped 3 cols (leakage: ['life_expectancy']); log: none",
+      "output": {
+        "dropped_leakage": [
+          "life_expectancy"
+        ],
+        "dropped_identifiers": [
+          "iso3",
+          "country"
+        ],
+        "dropped_total": [
+          "life_expectancy",
+          "iso3",
+          "country"
+        ],
+        "log_transformed": [],
+        "n_features": 7,
+        "engineered_path": "/tmp/agent_loop/engineered_warehouse_snapshot.csv"
+      }
+    },
+    {
+      "node": "hypothesis_generator",
+      "note": "heuristic plan",
+      "hypothesis": {
+        "direction": "Start with a simple linear baseline, drop leakage-prone columns, then iterate.",
+        "why": "Heuristic profile (OpenRouter unavailable).",
+        "focus": "baseline_then_iterate",
+        "respect_drops": [],
+        "avoid_repeats": []
+      },
+      "output": {
+        "direction": "Start with a simple linear baseline, drop leakage-prone columns, then iterate.",
+        "why": "Heuristic profile (OpenRouter unavailable).",
+        "focus": "baseline_then_iterate",
+        "respect_drops": [],
+        "avoid_repeats": []
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "ml_engineer",
+      "note": "heuristic HPT \u00b7 f1=0.837",
+      "f1": 0.8369304556354916,
+      "status": "succeeded",
+      "repaired": false,
+      "used_llm": false,
+      "experiment_id": "exp-1",
+      "model_family": "logistic_regression",
+      "validation_metrics": {
+        "f1": 0.8369304556354916,
+        "accuracy": 0.8671875
+      },
+      "duration_seconds": 1.259,
+      "spec": {
+        "experiment_id": "exp-1",
+        "model_family": "logistic_regression",
+        "hyperparameters": {
+          "C": 0.25,
+          "max_iter": 300
+        },
+        "drop_columns": [],
+        "rationale": "heuristic HPT from plan focus=baseline_then_iterate: logistic_regression"
+      },
+      "output": {
+        "experiment_spec": {
+          "experiment_id": "exp-1",
+          "model_family": "logistic_regression",
+          "hyperparameters": {
+            "C": 0.25,
+            "max_iter": 300
+          },
+          "drop_columns": [],
+          "rationale": "heuristic HPT from plan focus=baseline_then_iterate: logistic_regression"
+        },
+        "execution_result": {
+          "status": "succeeded",
+          "validation_metrics": {
+            "f1": 0.8369304556354916,
+            "accuracy": 0.8671875
+          },
+          "error": null
+        }
+      }
+    },
+    {
+      "node": "judge",
+      "note": "heuristic",
+      "verdict": {
+        "action": "revise",
+        "observation": "val f1 0.837 below target 0.90",
+        "next_action": "propose next experiment"
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "memory_writer",
+      "note": "filed lesson"
+    },
+    {
+      "node": "context_builder",
+      "note": "next brief"
+    },
+    {
+      "node": "hypothesis_generator",
+      "note": "heuristic plan",
+      "hypothesis": {
+        "direction": "Increase model capacity or relax regularization; prior val F1 was under target.",
+        "why": "val f1 0.837 below target 0.90",
+        "focus": "capacity_or_regularization",
+        "respect_drops": [],
+        "avoid_repeats": [
+          "logistic_regression"
+        ]
+      },
+      "output": {
+        "direction": "Increase model capacity or relax regularization; prior val F1 was under target.",
+        "why": "val f1 0.837 below target 0.90",
+        "focus": "capacity_or_regularization",
+        "respect_drops": [],
+        "avoid_repeats": [
+          "logistic_regression"
+        ]
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "ml_engineer",
+      "note": "heuristic HPT \u00b7 f1=0.826",
+      "f1": 0.8263473053892215,
+      "status": "succeeded",
+      "repaired": false,
+      "used_llm": false,
+      "experiment_id": "exp-2",
+      "model_family": "logistic_regression",
+      "validation_metrics": {
+        "f1": 0.8263473053892215,
+        "accuracy": 0.8583984375
+      },
+      "duration_seconds": 2.428,
+      "spec": {
+        "experiment_id": "exp-2",
+        "model_family": "logistic_regression",
+        "hyperparameters": {
+          "C": 0.5,
+          "max_iter": 300
+        },
+        "drop_columns": [],
+        "rationale": "heuristic HPT from plan focus=capacity_or_regularization: logistic_regression"
+      },
+      "output": {
+        "experiment_spec": {
+          "experiment_id": "exp-2",
+          "model_family": "logistic_regression",
+          "hyperparameters": {
+            "C": 0.5,
+            "max_iter": 300
+          },
+          "drop_columns": [],
+          "rationale": "heuristic HPT from plan focus=capacity_or_regularization: logistic_regression"
+        },
+        "execution_result": {
+          "status": "succeeded",
+          "validation_metrics": {
+            "f1": 0.8263473053892215,
+            "accuracy": 0.8583984375
+          },
+          "error": null
+        }
+      }
+    },
+    {
+      "node": "judge",
+      "note": "heuristic",
+      "verdict": {
+        "action": "revise",
+        "observation": "val f1 0.826 below target 0.90",
+        "next_action": "propose next experiment"
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "memory_writer",
+      "note": "filed lesson"
+    },
+    {
+      "node": "context_builder",
+      "note": "next brief"
+    },
+    {
+      "node": "hypothesis_generator",
+      "note": "heuristic plan",
+      "hypothesis": {
+        "direction": "logistic_regression plateaued under target after 2 tries; switch to a different model family (e.g. tree ensemble for non-linear income effects).",
+        "why": "val f1 0.826 below target 0.90",
+        "focus": "model_family_switch",
+        "respect_drops": [],
+        "avoid_repeats": [
+          "logistic_regression"
+        ]
+      },
+      "output": {
+        "direction": "logistic_regression plateaued under target after 2 tries; switch to a different model family (e.g. tree ensemble for non-linear income effects).",
+        "why": "val f1 0.826 below target 0.90",
+        "focus": "model_family_switch",
+        "respect_drops": [],
+        "avoid_repeats": [
+          "logistic_regression"
+        ]
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "ml_engineer",
+      "note": "heuristic HPT \u00b7 f1=0.894",
+      "f1": 0.8937728937728938,
+      "status": "succeeded",
+      "repaired": false,
+      "used_llm": false,
+      "experiment_id": "exp-3",
+      "model_family": "random_forest",
+      "validation_metrics": {
+        "f1": 0.8937728937728938,
+        "accuracy": 0.9150390625
+      },
+      "duration_seconds": 1.222,
+      "spec": {
+        "experiment_id": "exp-3",
+        "model_family": "random_forest",
+        "hyperparameters": {
+          "n_estimators": 160,
+          "max_depth": 8
+        },
+        "drop_columns": [],
+        "rationale": "heuristic HPT from plan focus=model_family_switch: random_forest"
+      },
+      "output": {
+        "experiment_spec": {
+          "experiment_id": "exp-3",
+          "model_family": "random_forest",
+          "hyperparameters": {
+            "n_estimators": 160,
+            "max_depth": 8
+          },
+          "drop_columns": [],
+          "rationale": "heuristic HPT from plan focus=model_family_switch: random_forest"
+        },
+        "execution_result": {
+          "status": "succeeded",
+          "validation_metrics": {
+            "f1": 0.8937728937728938,
+            "accuracy": 0.9150390625
+          },
+          "error": null
+        }
+      }
+    },
+    {
+      "node": "judge",
+      "note": "heuristic",
+      "verdict": {
+        "action": "revise",
+        "observation": "val f1 0.894 below target 0.90",
+        "next_action": "propose next experiment"
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "memory_writer",
+      "note": "filed lesson"
+    },
+    {
+      "node": "context_builder",
+      "note": "next brief"
+    },
+    {
+      "node": "hypothesis_generator",
+      "note": "heuristic plan",
+      "hypothesis": {
+        "direction": "Increase model capacity or relax regularization; prior val F1 was under target.",
+        "why": "val f1 0.894 below target 0.90",
+        "focus": "capacity_or_regularization",
+        "respect_drops": [],
+        "avoid_repeats": [
+          "logistic_regression",
+          "random_forest"
+        ]
+      },
+      "output": {
+        "direction": "Increase model capacity or relax regularization; prior val F1 was under target.",
+        "why": "val f1 0.894 below target 0.90",
+        "focus": "capacity_or_regularization",
+        "respect_drops": [],
+        "avoid_repeats": [
+          "logistic_regression",
+          "random_forest"
+        ]
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "ml_engineer",
+      "note": "heuristic HPT \u00b7 f1=0.943",
+      "f1": 0.9431524547803618,
+      "status": "succeeded",
+      "repaired": false,
+      "used_llm": false,
+      "experiment_id": "exp-4",
+      "model_family": "random_forest",
+      "validation_metrics": {
+        "f1": 0.9431524547803618,
+        "accuracy": 0.95703125
+      },
+      "duration_seconds": 1.919,
+      "spec": {
+        "experiment_id": "exp-4",
+        "model_family": "random_forest",
+        "hyperparameters": {
+          "n_estimators": 200,
+          "max_depth": 12
+        },
+        "drop_columns": [],
+        "rationale": "heuristic HPT from plan focus=capacity_or_regularization: random_forest"
+      },
+      "output": {
+        "experiment_spec": {
+          "experiment_id": "exp-4",
+          "model_family": "random_forest",
+          "hyperparameters": {
+            "n_estimators": 200,
+            "max_depth": 12
+          },
+          "drop_columns": [],
+          "rationale": "heuristic HPT from plan focus=capacity_or_regularization: random_forest"
+        },
+        "execution_result": {
+          "status": "succeeded",
+          "validation_metrics": {
+            "f1": 0.9431524547803618,
+            "accuracy": 0.95703125
+          },
+          "error": null
+        }
+      }
+    },
+    {
+      "node": "judge",
+      "note": "heuristic",
+      "verdict": {
+        "action": "accept",
+        "observation": "val f1 0.943 meets target 0.90",
+        "next_action": "finalize"
+      },
+      "used_llm": false,
+      "model": null
+    },
+    {
+      "node": "holdout_eval",
+      "note": "sealed holdout",
+      "metrics": {
+        "f1": 0.9434954007884363,
+        "accuracy": 0.9580078125,
+        "n_holdout": 1024
+      }
+    },
+    {
+      "node": "error_analyst",
+      "note": "holdout f1=0.944; weakest region: Europe & Central Asia (acc 0.92)",
+      "output": {
+        "model_family": "random_forest",
+        "n_holdout": 1024,
+        "accuracy": 0.958,
+        "precision": 0.9276,
+        "recall": 0.9599,
+        "f1": 0.9435,
+        "confusion_matrix": {
+          "labels": [
+            0,
+            1
+          ],
+          "matrix": [
+            [
+              622,
+              28
+            ],
+            [
+              15,
+              359
+            ]
+          ]
+        },
+        "roc_auc": 0.9919,
+        "slice_column": "region",
+        "slices": [
+          {
+            "region": "Europe & Central Asia",
+            "n": 243,
+            "accuracy": 0.9177,
+            "f1": 0.9394,
+            "positive_rate": 0.6502
+          },
+          {
+            "region": "South Asia",
+            "n": 40,
+            "accuracy": 0.925,
+            "f1": 0.7692,
+            "positive_rate": 0.2
+          },
+          {
+            "region": "Latin America & Caribbean",
+            "n": 202,
+            "accuracy": 0.9406,
+            "f1": 0.9178,
+            "positive_rate": 0.3614
+          },
+          {
+            "region": "Middle East, North Africa, Afghanistan & Pakistan",
+            "n": 123,
+            "accuracy": 0.9593,
+            "f1": 0.9505,
+            "positive_rate": 0.4065
+          },
+          {
+            "region": "East Asia & Pacific",
+            "n": 171,
+            "accuracy": 0.9825,
+            "f1": 0.9778,
+            "positive_rate": 0.3918
+          },
+          {
+            "region": "North America",
+            "n": 17,
+            "accuracy": 1.0,
+            "f1": 1.0,
+            "positive_rate": 1.0
+          },
+          {
+            "region": "Sub-Saharan Africa",
+            "n": 228,
+            "accuracy": 1.0,
+            "f1": 1.0,
+            "positive_rate": 0.0044
+          }
+        ]
+      }
+    }
+  ]
+}

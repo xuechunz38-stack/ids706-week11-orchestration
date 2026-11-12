@@ -1,0 +1,28 @@
+{
+  "run_id": "manual__2026-11-12T19:25:47+00:00",
+  "rows_loaded": 5118,
+  "countries": 214,
+  "target_rate": 0.3652,
+  "quality": {
+    "rows": 5118,
+    "duplicate_keys": 0,
+    "target_rate": 0.3652
+  },
+  "figures": [
+    "/repo/reports/pipeline/gdp_vs_life_expectancy.png",
+    "/repo/reports/pipeline/life_expectancy_by_region.png"
+  ],
+  "baseline_metrics": {
+    "model": "logistic_regression (log GDP, scaled numerics, one-hot region/income)",
+    "split": "GroupShuffleSplit by country, 25% countries held out",
+    "n_train": 3831,
+    "n_test": 1287,
+    "accuracy": 0.8897,
+    "f1": 0.8408,
+    "roc_auc": 0.9552
+  },
+  "agent_dataset": {
+    "path": "/repo/datasets/life_expectancy_clean.csv",
+    "rows": 5118
+  }
+}

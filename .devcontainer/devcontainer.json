@@ -1,0 +1,21 @@
+{
+  "name": "IDS 706 Week 11 - Airflow + agent loop",
+  "dockerComposeFile": ["../infra/docker-compose.yml"],
+  "service": "airflow-scheduler",
+  "runServices": ["warehouse-db", "airflow-db", "airflow-init", "airflow-webserver", "airflow-scheduler", "redis", "gateway"],
+  "workspaceFolder": "/repo",
+  "remoteUser": "airflow",
+  "forwardPorts": [8088, 8000, 5173, 5433],
+  "portsAttributes": {
+    "8088": { "label": "Airflow UI" },
+    "8000": { "label": "Agent gateway" },
+    "5173": { "label": "Agent UI (Vite)" },
+    "5433": { "label": "Warehouse Postgres" }
+  },
+  "postCreateCommand": "pip install --user pytest 'langgraph>=0.2'",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-toolsai.jupyter", "ms-azuretools.vscode-docker"]
+    }
+  }
+}

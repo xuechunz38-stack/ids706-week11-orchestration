@@ -1,0 +1,183 @@
+# IDS 706 Week 11 — Airflow pipeline + Postgres warehouse + LangGraph agent loop (gateway).
+# Slimmed from the in-class AutoML Research Lab stack (full original kept in
+# docker-compose.template-full.yml) so everything fits in ~4 GB of Docker memory.
+
+name: ids706-week11
+
+x-airflow-env: &airflow-env
+  AIRFLOW__CORE__EXECUTOR: LocalExecutor
+  AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db/airflow
+  AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-oTWC6DY6QwwfP7e31V1vCCipJr_eSju8hGTVr9yiJSU=}
+  AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+  AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+  AIRFLOW__CORE__PARALLELISM: "8"
+  AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: "10"
+  AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: "30"
+  AIRFLOW__API__AUTH_BACKENDS: airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+  # Warehouse connection defined as code (no manual Admin > Connections step).
+  AIRFLOW_CONN_WAREHOUSE_DB: postgresql://warehouse:warehouse@warehouse-db:5432/warehouse
+  _AIRFLOW_DB_MIGRATE: "true"
+  _AIRFLOW_WWW_USER_CREATE: "true"
+  _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
+  _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+  PYTHONPATH: /repo
+  PIPELINE_REPO: /repo
+
+x-airflow-volumes: &airflow-volumes
+  - ../pipeline/dags:/opt/airflow/dags
+  - ..:/repo
+
+services:
+  # ---------------- Data warehouse (pipeline target) ----------------
+  warehouse-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: warehouse
+      POSTGRES_PASSWORD: warehouse
+      POSTGRES_DB: warehouse
+    ports:
+      - "5433:5432"
+    volumes:
+      - warehouse_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warehouse -d warehouse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [lab]
+
+  # ---------------- Airflow ----------------
+  airflow-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [lab]
+
+  airflow-init:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.airflow
+    image: ids706-week11-airflow:latest
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+    environment: *airflow-env
+    volumes: *airflow-volumes
+    user: "0:0"
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /repo/data /repo/reports/pipeline /repo/datasets
+        chown -R 50000:0 /repo/data /repo/reports /repo/datasets /opt/airflow
+        exec /entrypoint airflow version
+    networks: [lab]
+
+  airflow-webserver:
+    image: ids706-week11-airflow:latest
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment: *airflow-env
+    volumes: *airflow-volumes
+    user: "50000:0"
+    command: webserver
+    ports:
+      - "8088:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks: [lab]
+
+  airflow-scheduler:
+    image: ids706-week11-airflow:latest
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      warehouse-db:
+        condition: service_healthy
+    environment: *airflow-env
+    volumes: *airflow-volumes
+    user: "50000:0"
+    command: scheduler
+    networks: [lab]
+
+  # ---------------- Agent loop backend (LangGraph via gateway SSE) ----------------
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [lab]
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.service
+      args:
+        SERVICE_DIR: gateway
+        PORT: "8000"
+    env_file:
+      - ../.env
+    environment:
+      SERVICE_TOKEN: ${SERVICE_TOKEN:-dev-service-token}
+      GATEWAY_DEFAULT_MODE: ${GATEWAY_DEFAULT_MODE:-live}
+      REDIS_URL: redis://redis:6379/0
+      DATASETS_DIR: /bundled
+      BUNDLED_CSV: /bundled/life_expectancy_clean.csv
+      PROJECT_DATA_DIR: /data/projects
+      LOOP_RUNS_PATH: /data/loop_runs/runs.json
+      SOLUTION_LOOP_ROOT: /packages/solution/langgraph
+      LAB_LOOP_ROOT: /packages/lab/langgraph
+      # The agent loop's warehouse_loader pulls the cleaned table straight from Postgres.
+      WAREHOUSE_URL: postgresql://warehouse:warehouse@warehouse-db:5432/warehouse
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-nvidia/nemotron-3.5-lightning:free}
+      CURSOR_API_KEY: ${CURSOR_API_KEY:-}
+    volumes:
+      - ../datasets:/bundled
+      - ../lab:/packages/lab
+      - ../solution:/packages/solution
+      - ../loop_runtime.py:/app/loop_runtime.py
+      - ../mocks/recordings:/app/mocks/recordings:ro
+      - ../reports:/reports
+      - project_data:/data/projects
+      - loop_runs_data:/data/loop_runs
+    depends_on:
+      redis:
+        condition: service_healthy
+      warehouse-db:
+        condition: service_healthy
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks: [lab]
+
+networks:
+  lab:
+    driver: bridge
+
+volumes:
+  warehouse_data:
+  airflow_db:
+  project_data:
+  loop_runs_data:
